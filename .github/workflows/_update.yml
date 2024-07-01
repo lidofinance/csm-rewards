@@ -1,0 +1,64 @@
+---
+name: Update CSM rewards tree
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: branch to commit the changes
+        required: true
+        type: string
+      distributor:
+        description: CSFeeDistributor address
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Setup poetry
+        run: >
+          curl -sSL https://install.python-poetry.org | python - &&
+          echo "$POETRY_HOME/bin" >> "$GITHUB_PATH"
+        env:
+          POETRY_HOME: "/opt/poetry"
+          POETRY_VERSION: 1.8.3
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Generate types
+        run: poetry run wake up pytypes
+
+      - name: Run script
+        run: poetry run wake run main.py
+        id: script
+        env:
+          RPC_URL: ${{ inputs.branch == 'testnet' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
+          GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
+          GW3_SECRET_KEY: ${{ secrets.GW3_SECRET_KEY }}
+          DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
+
+      - name: Commit new artifacts
+        if: ${{ steps.script.outputs.updated == 'True' }}
+        run: |
+          git config --global user.name "madlabman"
+          git config --global user.email "10616301+madlabman@users.noreply.github.com"
+          git add "*.json"
+          git commit -m "chore: update tree and proofs" -m "CID: ${{ steps.script.outputs.cid }}"
+          git fetch origin
+          git rebase --strategy-option=ours "origin/${{ inputs.branch }}"
+          git push

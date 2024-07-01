@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import sys
 
 from wake.deployment import Address, default_chain, print
@@ -37,7 +38,7 @@ def main():
 
     proofs = {
         f"CSM Operator {v["value"][0]}": {
-            "leaf": tree.leaf(v["value"]),
+            "cumulativeFeeShares": v["value"][1],
             "proof": list(tree.get_proof(v["treeIndex"])),
         }
         for v in dump["values"]
@@ -45,6 +46,23 @@ def main():
 
     with open("proofs.json", "w", encoding="utf-8") as fp:
         json.dump(proofs, fp, indent=2, default=default)
+
+    github_output = os.getenv("GITHUB_OUTPUT", None)
+    if not github_output:
+        return
+
+    git_diff = subprocess.run(["git", "diff", "--exit-code", "--quiet", "tree.json"])
+
+    with open(github_output, "a", encoding="utf-8") as fp:
+        fp.write(
+            "\n".join(
+                [
+                    "",
+                    f"cid={cid}",
+                    f"updated={git_diff.returncode != 0}",
+                ]
+            )
+        )
 
 
 def default(o):
