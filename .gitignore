@@ -1,0 +1,6 @@
+.direnv
+.env
+.wake
+pytypes
+__pycache__
+*.pyc

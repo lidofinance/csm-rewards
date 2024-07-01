@@ -1,0 +1,3 @@
+[compiler.solc]
+exclude_paths = ["node_modules", ".direnv", "lib", "script", "test"]
+include_paths = ["node_modules"]
