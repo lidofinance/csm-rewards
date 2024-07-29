@@ -38,7 +38,15 @@ jobs:
           POETRY_VERSION: 1.8.3
 
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: |
+          echo "setuptools<72" > "constraints.txt"
+          pip install intervaltree==3.1.0
+          poetry install --no-interaction
+        env:
+          PIP_CONSTRAINT: "constraints.txt"
+          POETRY_VIRTUALENVS_CREATE: false
+
+
 
       - name: Generate types
         run: poetry run wake up pytypes
