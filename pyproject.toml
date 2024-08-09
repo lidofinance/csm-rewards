@@ -10,7 +10,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.12"
 requests = "^2.32.3"
-eth-wake = "^4.10.1"
+eth-wake = {git = "https://github.com/Ackee-Blockchain/wake"}
 
 [build-system]
 requires = ["poetry-core"]
