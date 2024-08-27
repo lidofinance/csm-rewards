@@ -1,11 +1,11 @@
 import json
-import os
 import subprocess
 import sys
 
-from wake.deployment import Address, default_chain, print
+from wake.deployment import Address, chain, print
 
-from gw3 import GW3
+from env import EnvNotSet, getenv
+from ipfs import GW3, PublicIPFS
 from pytypes.contracts.ICSFeeDistributor import ICSFeeDistributor
 from tree import StandardMerkleTree
 
@@ -13,17 +13,26 @@ type NodeOperatorID = int
 type Shares = int
 
 
-@default_chain.connect(os.environ["RPC_URL"])
+@chain.connect(getenv("RPC_URL"))
 def main():
-    ipfs = GW3(os.environ["GW3_ACCESS_KEY"], os.environ["GW3_SECRET_KEY"])
-    distributor = ICSFeeDistributor(os.environ["DISTRIBUTOR_ADDRESS"])
+    distributor = ICSFeeDistributor(getenv("DISTRIBUTOR_ADDRESS"))
+
     root = distributor.treeRoot(from_=Address(0))
     cid = distributor.treeCid(from_=Address(0))
+
     print(f"root={root.hex()} {cid=}")
 
     if not cid:
         print("No CID stored so far")
         sys.exit()
+
+    try:
+        ipfs = GW3(
+            getenv("GW3_ACCESS_KEY"),
+            getenv("GW3_SECRET_KEY"),
+        )
+    except EnvNotSet:
+        ipfs = PublicIPFS()
 
     tree = StandardMerkleTree[tuple[NodeOperatorID, Shares]].load(json.loads(ipfs.fetch(cid)))
     if tree.root != root:
@@ -47,8 +56,9 @@ def main():
     with open("proofs.json", "w", encoding="utf-8") as fp:
         json.dump(proofs, fp, indent=2, default=default)
 
-    github_output = os.getenv("GITHUB_OUTPUT", None)
-    if not github_output:
+    try:
+        github_output = getenv("GITHUB_OUTPUT")
+    except EnvNotSet:
         return
 
     git_diff = subprocess.run(["git", "diff", "--exit-code", "--quiet", "tree.json"])

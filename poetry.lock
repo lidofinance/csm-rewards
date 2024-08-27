@@ -888,7 +888,7 @@ test = ["hypothesis (>=4.43.0)", "mypy (==0.971)", "pytest (>=7.0.0)", "pytest-x
 
 [[package]]
 name = "eth-wake"
-version = "4.11.0-beta.3"
+version = "4.11.1"
 description = "Wake is a Python-based Solidity development and testing framework with built-in vulnerability detectors."
 optional = false
 python-versions = "^3.8"
@@ -936,7 +936,7 @@ tests = ["GitPython (>=3.1.20,<4.0.0)", "pytest-asyncio (>=0.17,<0.18)"]
 type = "git"
 url = "https://github.com/Ackee-Blockchain/wake"
 reference = "HEAD"
-resolved_reference = "fb7634bf514240f128d3047428c6dd0c2803aeea"
+resolved_reference = "027a408d8a1755868a1d7e7cf54b6e1d8692f076"
 
 [[package]]
 name = "executing"
@@ -1708,6 +1708,20 @@ pluggy = ">=0.12,<2.0"
 testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
+name = "python-dotenv"
+version = "1.0.1"
+description = "Read key-value pairs from a .env file and set them as environment variables"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "python-dotenv-1.0.1.tar.gz", hash = "sha256:e324ee90a023d808f1959c46bcbc04446a10ced277783dc6ee09987c37ec10ca"},
+    {file = "python_dotenv-1.0.1-py3-none-any.whl", hash = "sha256:f7b63ef50f1b690dddf550d03497b66d609393b40b564ed0d674909a68ebf16a"},
+]
+
+[package.extras]
+cli = ["click (>=5.0)"]
+
+[[package]]
 name = "pywin32"
 version = "306"
 description = "Python for Window Extensions"
@@ -2233,4 +2247,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "f307a017bc312d67b3ade2e5c4c83ce15d33b49aa625991559b894363b11c673"
+content-hash = "488c5b51026e929958706d2886df143e7a821e5a72219ed33e1d40ba6605c28f"

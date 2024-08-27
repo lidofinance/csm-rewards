@@ -13,6 +13,6 @@ jobs:
   testnet:
     uses: ./.github/workflows/_update.yml
     with:
-      branch: testnet
+      branch: holesky
       distributor: "0xD7ba648C8F72669C6aE649648B516ec03D07c8ED"
     secrets: inherit

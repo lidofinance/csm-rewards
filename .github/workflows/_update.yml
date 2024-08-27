@@ -39,14 +39,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          echo "setuptools<72" > "constraints.txt"
-          pip install intervaltree==3.1.0
           poetry install --no-interaction
-        env:
-          PIP_CONSTRAINT: "constraints.txt"
-          POETRY_VIRTUALENVS_CREATE: false
-
-
 
       - name: Generate types
         run: poetry run wake up pytypes
@@ -55,7 +48,7 @@ jobs:
         run: poetry run wake run main.py
         id: script
         env:
-          RPC_URL: ${{ inputs.branch == 'testnet' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
+          RPC_URL: ${{ inputs.branch == 'holesky' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
           GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
           GW3_SECRET_KEY: ${{ secrets.GW3_SECRET_KEY }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
