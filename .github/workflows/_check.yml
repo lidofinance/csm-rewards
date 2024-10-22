@@ -1,0 +1,76 @@
+---
+name: Check CSM rewards tree
+
+on:
+  workflow_call:
+    inputs:
+      chain:
+        description: Chain to run the script
+        required: true
+        type: string
+      distributor:
+        description: CSFeeDistributor address
+        required: true
+        type: string
+      notify:
+        description: Notify the test results to a Discord channel
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Setup poetry
+        run: >
+          curl -sSL https://install.python-poetry.org | python - &&
+          echo "$POETRY_HOME/bin" >> "$GITHUB_PATH"
+        env:
+          POETRY_HOME: "/opt/poetry"
+          POETRY_VERSION: 1.8.3
+
+      - name: Install dependencies
+        run: |
+          poetry install --no-interaction
+
+      - name: Generate types
+        run: poetry run wake up pytypes
+
+      - name: Run checks
+        run: poetry run wake run check.py
+        env:
+          RPC_URL: ${{ inputs.chain == 'holesky' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
+          GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
+          GW3_SECRET_KEY: ${{ secrets.GW3_SECRET_KEY }}
+          DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
+
+      - name: Echo embeds to the env variable
+        if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify) }}
+        run: |
+          EMBEDS=$(cat <<EOF
+          [
+            {
+              "title": "Reward trees checks have failed! :scream:",
+              "url": "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID",
+              "description": "Check the logs for more information."
+            }
+          ]
+          EOF
+          )
+          EMBEDS=$(echo "$EMBEDS" | jq -c .) # Compact JSON representation
+          echo "EMBEDS=$EMBEDS" >> "$GITHUB_ENV"
+
+      - name: Discord notification when fails
+        if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify) }}
+        uses: lidofinance/action-discord@0.3.2
+        env:
+          DISCORD_WEBHOOK: ${{ inputs.chain == 'holesky' && secrets.DISCORD_WEBHOOK_HOLESKY || secrets.DISCORD_WEBHOOK_MAINNET }}
+          DISCORD_EMBEDS: ${{ env.EMBEDS }}
