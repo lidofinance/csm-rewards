@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from functools import reduce
+from functools import cached_property, reduce
 from typing import Collection, Generic, Iterable, Self, Sequence, TypedDict, TypeVar
 
 from eth_abi.abi import encode
@@ -142,3 +142,22 @@ class StandardMerkleTree(Generic[T], CompleteBinaryMerkleTree):
         if lhs > rhs:
             lhs, rhs = rhs, lhs
         return keccak(lhs + rhs)
+
+
+type NodeOperatorID = int
+type Shares = int
+
+
+class CSMRewardTree(StandardMerkleTree[tuple[NodeOperatorID, Shares]]):
+    kv: dict[NodeOperatorID, Shares]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.kv = {no_id: shares for (no_id, shares) in self}
+
+    @cached_property
+    def total_shares(self) -> Shares:
+        return sum(shares for (_, shares) in self)
+
+    def __iter__(self):
+        return (v["value"] for v in self.values)
