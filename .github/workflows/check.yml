@@ -11,7 +11,7 @@ jobs:
     uses: ./.github/workflows/_check.yml
     with:
       notify: true
-      branch: holesky
+      chain: holesky
       distributor: "0xD7ba648C8F72669C6aE649648B516ec03D07c8ED"
     secrets: inherit
 
