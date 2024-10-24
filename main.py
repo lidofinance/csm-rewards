@@ -7,24 +7,25 @@ from wake.deployment import Address, chain, print
 from env import EnvNotSet, getenv
 from ipfs import GW3, PublicIPFS
 from pytypes.contracts.ICSFeeDistributor import ICSFeeDistributor
-from tree import StandardMerkleTree
+from tree import CSMRewardTree
 
-type NodeOperatorID = int
-type Shares = int
+EXIT_SUCCESS = 0
+EXIT_FAILURE = 1
 
 
 @chain.connect(getenv("RPC_URL"))
 def main():
     distributor = ICSFeeDistributor(getenv("DISTRIBUTOR_ADDRESS"))
+    chain.default_call_account = Address(0)
 
-    root = distributor.treeRoot(from_=Address(0))
-    cid = distributor.treeCid(from_=Address(0))
+    root = distributor.treeRoot()
+    cid = distributor.treeCid()
 
     print(f"root={root.hex()} {cid=}")
 
     if not cid:
-        print("No CID stored so far")
-        sys.exit()
+        print("No tree CID stored so far")
+        sys.exit(EXIT_SUCCESS)
 
     try:
         ipfs = GW3(
@@ -34,11 +35,11 @@ def main():
     except EnvNotSet:
         ipfs = PublicIPFS()
 
-    tree = StandardMerkleTree[tuple[NodeOperatorID, Shares]].load(json.loads(ipfs.fetch(cid)))
+    tree = CSMRewardTree.load(json.loads(ipfs.fetch(cid)))
     if tree.root != root:
         print(f"tree.root={tree.root.hex()}")
-        print("Roots mismatch")
-        sys.exit(1)
+        print("error: Roots mismatch")
+        sys.exit(EXIT_FAILURE)
 
     dump = tree.dump()
 
@@ -56,10 +57,12 @@ def main():
     with open("proofs.json", "w", encoding="utf-8") as fp:
         json.dump(proofs, fp, indent=2, default=default)
 
+    # XXX: CI-only stuff below.
+
     try:
         github_output = getenv("GITHUB_OUTPUT")
     except EnvNotSet:
-        return
+        sys.exit(EXIT_SUCCESS)
 
     git_diff = subprocess.run(["git", "diff", "--exit-code", "--quiet", "tree.json"])
 

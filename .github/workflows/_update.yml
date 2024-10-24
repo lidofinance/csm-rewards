@@ -4,8 +4,8 @@ name: Update CSM rewards tree
 on:
   workflow_call:
     inputs:
-      branch:
-        description: branch to commit the changes
+      chain:
+        description: Chain to run the script
         required: true
         type: string
       distributor:
@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.chain }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
@@ -48,7 +48,7 @@ jobs:
         run: poetry run wake run main.py
         id: script
         env:
-          RPC_URL: ${{ inputs.branch == 'holesky' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
+          RPC_URL: ${{ inputs.chain == 'holesky' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
           GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
           GW3_SECRET_KEY: ${{ secrets.GW3_SECRET_KEY }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
@@ -61,5 +61,5 @@ jobs:
           git add "*.json"
           git commit -m "chore: update tree and proofs" -m "CID: ${{ steps.script.outputs.cid }}"
           git fetch origin
-          git rebase --strategy-option=ours "origin/${{ inputs.branch }}"
+          git rebase --strategy-option=ours "origin/${{ inputs.chain }}"
           git push
