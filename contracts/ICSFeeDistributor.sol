@@ -8,6 +8,7 @@ interface ICSFeeDistributor {
         string treeCid
     );
 
+    function logCid() external view returns (string memory);
     function treeCid() external view returns (string memory);
     function treeRoot() external view returns (bytes32);
 }
