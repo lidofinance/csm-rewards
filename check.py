@@ -1,5 +1,6 @@
 import json
 import sys
+from collections import defaultdict
 from typing import TypedDict
 
 from wake.deployment import Abi, Address, chain, print
@@ -90,6 +91,7 @@ def main():
     if curr_tree.root != curr_root:
         eprint(f"Unexpected current tree root: actual={curr_tree.root}, expected={curr_root}")
         sys.exit(EXIT_FAILURE)
+    print(f"[OK] CID={curr_cid} contains a tree with an expected root")
 
     prev_cid = distributor.treeCid(block=last_upd_bn - 1)
     prev_tree = None
@@ -99,15 +101,17 @@ def main():
         if prev_tree.root != prev_root:
             eprint(f"Unexpected previous tree root: actual={prev_tree.root}, expected={prev_root}")
             sys.exit(EXIT_FAILURE)
+        print(f"[OK] Previous distribution tree found via CID={prev_cid}")
 
     diff = curr_tree.total_shares - prev_tree.total_shares if prev_tree else curr_tree.total_shares
     if diff != distributed:
         eprint(f"Unexpected distribution results: actual={diff}, expected={distributed}")
         sys.exit(EXIT_FAILURE)
+    print("[OK] Total amount of shares distributed via the latest tree is correct")
+
+    is_failed = False
 
     if prev_tree:
-        is_failed = False
-
         for no_id, prev_shares in prev_tree:
             if no_id not in curr_tree.kv:
                 eprint(f"NO with id {no_id} has gone from the distribution in the tree with root 0x{curr_root.hex()}")
@@ -117,10 +121,39 @@ def main():
                 eprint(f"Shares of NO with id {no_id} decreased in the tree with root 0x{curr_root.hex()}")
                 is_failed = True
 
-        if is_failed:
-            sys.exit(EXIT_FAILURE)
+    if is_failed:
+        sys.exit(EXIT_FAILURE)
 
-    print("All checks passed!")
+    log_cid = distributor.logCid(block=last_net_bn)
+    log = json.loads(ipfs.fetch(log_cid))
+    print(f"[OK] Latest frame log restored from CID={log_cid}")
+
+    shares_of_op = defaultdict[int, int](int)
+    for op_id, op in log["operators"].items():
+        for v in op["validators"].values():
+            perf = v["perf"]["included"] / v["perf"]["assigned"]
+            if not v["slashed"] and perf > log["threshold"]:
+                shares_of_op[int(op_id)] += v["perf"]["assigned"]
+
+    total_shares = sum(shares_of_op.values())
+    for op_id, op_share in shares_of_op.items():
+        expected = log["distributable"] * op_share // total_shares
+        actual = curr_tree.kv[op_id]
+        if prev_tree and op_id in prev_tree.kv:
+            actual -= prev_tree.kv[op_id]
+        diff = actual - expected
+        if diff != 0:
+            eprint(
+                f"Shares of NO with id {op_id} by frame log are not consistent with the value in the tree"
+                + f"\n\t{actual}[tree] != {expected}[log], {diff=}"
+            )
+            is_failed = True
+
+    if is_failed:
+        sys.exit(EXIT_FAILURE)
+    print("[OK] Tree distribution is consistent with the frame log")
+
+    print("[OK] All checks passed!")
 
 
 def eprint(msg: str) -> None:
