@@ -3,7 +3,7 @@ import sys
 from collections import defaultdict
 from typing import TypedDict
 
-from wake.deployment import Abi, Address, chain, print
+from wake.deployment import Abi, Address, TransactionAbc, chain, print
 
 from env import EnvNotSet, getenv
 from ipfs import GW3, PublicIPFS
@@ -44,7 +44,9 @@ def main():
         address=getenv("DISTRIBUTOR_ADDRESS"),
     )
 
-    distributed, last_upd_bn = 0, None
+    distributed = 0
+    ref_slot: int | None = None
+    tx: TransactionAbc | None = None
 
     for evt in reversed(logs):
         tx = chain.txs[evt["transactionHash"]]
@@ -69,14 +71,20 @@ def main():
             # NOTE: We changed the method's signature at some point.
             pass
         else:
-            ((_, _, root, _, _, distributed), _) = decoded
+            ((_, ref_slot, root, _, _, distributed), _) = decoded
             if root == curr_root:
-                print(f"Latest distribution happened at tx {tx.tx_hash}, {distributed=}, root=0x{root.hex()}")
-                last_upd_bn = int(evt["blockNumber"], 16)
+                print(
+                    f"Latest distribution happened at tx {tx.tx_hash},"
+                    f"{distributed=}, root=0x{root.hex()}, {ref_slot=}"
+                )
                 break
 
-    if not last_upd_bn:
+    if not tx:
         eprint("No distribution event found")
+        sys.exit(EXIT_FAILURE)
+
+    if not ref_slot:
+        eprint("Unable to get reference slot from the report tx")
         sys.exit(EXIT_FAILURE)
 
     try:
@@ -93,10 +101,10 @@ def main():
         sys.exit(EXIT_FAILURE)
     print(f"[OK] CID={curr_cid} contains a tree with an expected root")
 
-    prev_cid = distributor.treeCid(block=last_upd_bn - 1)
+    prev_cid = distributor.treeCid(block=tx.block_number - 1)
     prev_tree = None
     if prev_cid:
-        prev_root = distributor.treeRoot(block=last_upd_bn - 1)
+        prev_root = distributor.treeRoot(block=tx.block_number - 1)
         prev_tree = CSMRewardTree.load(json.loads(ipfs.fetch(prev_cid)))
         if prev_tree.root != prev_root:
             eprint(f"Unexpected previous tree root: actual={prev_tree.root}, expected={prev_root}")
@@ -127,6 +135,25 @@ def main():
     log_cid = distributor.logCid(block=last_net_bn)
     log = json.loads(ipfs.fetch(log_cid))
     print(f"[OK] Latest frame log restored from CID={log_cid}")
+
+    if (log_ref_slot := log["blockstamp"]["ref_slot"]) != ref_slot:
+        eprint(f"Invalid ref_slot in log, got={log_ref_slot} expected={ref_slot}")
+        sys.exit(EXIT_FAILURE)
+
+    report_block = chain.blocks[log["blockstamp"]["block_number"]]
+
+    if (log_block_hash := log["blockstamp"]["block_hash"]) != report_block.hash:
+        eprint(
+            f"Invalid block in log, got hash {report_block.hash} by {report_block.number}, "
+            f"expected={log_block_hash}"
+        )
+        sys.exit(EXIT_FAILURE)
+
+    if report_block.number > tx.block_number:
+        eprint(f"Invalid block in log, got={report_block.number} for tx within block={tx.block_number}")
+        sys.exit(EXIT_FAILURE)
+
+    print("[OK] Report blockstamp seems to be valid")
 
     shares_of_op = defaultdict[int, int](int)
     for op_id, op in log["operators"].items():
