@@ -49,8 +49,8 @@ jobs:
         id: script
         env:
           RPC_URL: ${{ inputs.chain == 'holesky' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
-          GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
-          GW3_SECRET_KEY: ${{ secrets.GW3_SECRET_KEY }}
+          # GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
+          # GW3_SECRET_KEY: ${{ secrets.GW3_SECRET_KEY }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
 
       - name: Commit new artifacts
