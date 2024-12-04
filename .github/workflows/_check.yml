@@ -45,7 +45,7 @@ jobs:
         run: poetry run wake up pytypes
 
       - name: Run checks
-        run: poetry run wake run check.py
+        run: poetry run wake run --silent check.py
         env:
           RPC_URL: ${{ inputs.chain == 'holesky' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
           # GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
