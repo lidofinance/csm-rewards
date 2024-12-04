@@ -158,6 +158,8 @@ def main():
     shares_of_op = defaultdict[int, int](int)
     for op_id, op in log["operators"].items():
         for v in op["validators"].values():
+            if v["slashed"]:
+                continue
             perf = v["perf"]["included"] / v["perf"]["assigned"]
             if not v["slashed"] and perf > log["threshold"]:
                 shares_of_op[int(op_id)] += v["perf"]["assigned"]
