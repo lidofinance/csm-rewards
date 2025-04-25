@@ -47,9 +47,7 @@ jobs:
       - name: Run checks
         run: poetry run wake run --silent check.py
         env:
-          RPC_URL: ${{ inputs.chain == 'holesky' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
-          # GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
-          # GW3_SECRET_KEY: ${{ secrets.GW3_SECRET_KEY }}
+          RPC_URL: ${{ inputs.chain == 'hoodi' && secrets.RPC_URL_HOODI || secrets.RPC_URL_MAINNET }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
 
       - name: Echo embeds to the env variable
@@ -72,5 +70,5 @@ jobs:
         if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify) }}
         uses: lidofinance/action-discord@0.3.2
         env:
-          DISCORD_WEBHOOK: ${{ inputs.chain == 'holesky' && secrets.DISCORD_WEBHOOK_HOLESKY || secrets.DISCORD_WEBHOOK_MAINNET }}
+          DISCORD_WEBHOOK: ${{ inputs.chain == 'hoodi' && secrets.DISCORD_WEBHOOK_HOODI || secrets.DISCORD_WEBHOOK_MAINNET }}
           DISCORD_EMBEDS: ${{ env.EMBEDS }}

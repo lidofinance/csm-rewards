@@ -48,9 +48,7 @@ jobs:
         run: poetry run wake run main.py
         id: script
         env:
-          RPC_URL: ${{ inputs.chain == 'holesky' && secrets.RPC_URL_HOLESKY || secrets.RPC_URL_MAINNET }}
-          # GW3_ACCESS_KEY: ${{ secrets.GW3_ACCESS_KEY }}
-          # GW3_SECRET_KEY: ${{ secrets.GW3_SECRET_KEY }}
+          RPC_URL: ${{ inputs.chain == 'hoodi' && secrets.RPC_URL_HOODI || secrets.RPC_URL_MAINNET }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
 
       - name: Commit new artifacts
