@@ -1,3 +1,13 @@
+<div align="center">
+
+[![MAINNET](https://img.shields.io/badge/MAINNET-green?style=for-the-badge)](https://github.com/lidofinance/csm-rewards/tree/mainnet)
+[![HOODI](https://img.shields.io/badge/HOODI-blue?style=for-the-badge)](https://github.com/lidofinance/csm-rewards/tree/hoodi)
+[![HOLESKY](https://img.shields.io/badge/HOLESKY-grey?style=for-the-badge)](https://github.com/lidofinance/csm-rewards/tree/holesky)
+
+</div>
+
+---
+
 If you're a Node Operator in CSM, you get staking rewards as a part of Lido
 protocol fees. The allocation of rewards for CSM operators using a Merkle tree
 is provided by CSM Performance Oracle once in a frame, making a new portion of
