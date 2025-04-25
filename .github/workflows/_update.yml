@@ -5,14 +5,13 @@ on:
   workflow_call:
     inputs:
       chain:
-        description: Chain to run the script
+        description: Branch to commit the updated artifacts to
         required: true
         type: string
       distributor:
         description: CSFeeDistributor address
         required: true
         type: string
-
 permissions:
   contents: write
 
@@ -20,12 +19,20 @@ jobs:
   script:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup RPC URL
+        run: |
+          echo "::add-mask::$RPC_URL"
+          echo "RPC_URL=$RPC_URL" >> "$GITHUB_ENV"
+        env:
+          RPC_URL: ${{ inputs.chain == 'hoodi' && secrets.RPC_URL_HOODI || secrets.RPC_URL_MAINNET }}
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.chain }}
+          ref: mainnet
+          persist-credentials: false
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12.4"
 
@@ -45,17 +52,25 @@ jobs:
         run: poetry run wake up pytypes
 
       - name: Run script
-        run: poetry run wake run main.py
+        run: |
+          poetry run wake run main.py
+          mkdir -p /tmp/artifacts && mv ./*.json /tmp/artifacts
         id: script
         env:
-          RPC_URL: ${{ inputs.chain == 'hoodi' && secrets.RPC_URL_HOODI || secrets.RPC_URL_MAINNET }}
+          RPC_URL: ${{ env.RPC_URL }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
+
+      - uses: actions/checkout@v4
+        with:
+          clean: true
+          ref: ${{ inputs.chain }}
 
       - name: Commit new artifacts
         if: ${{ steps.script.outputs.updated == 'True' }}
         run: |
           git config --global user.name "madlabman"
           git config --global user.email "10616301+madlabman@users.noreply.github.com"
+          mv /tmp/artifacts/* .
           git add "*.json"
           git commit -m "chore: update tree and proofs" -m "CID: ${{ steps.script.outputs.cid }}"
           git fetch origin

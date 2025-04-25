@@ -5,7 +5,7 @@ on:
   workflow_call:
     inputs:
       chain:
-        description: Chain to run the script
+        description: Chain to run the script on
         required: true
         type: string
       distributor:
@@ -22,10 +22,27 @@ jobs:
   script:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup RPC URL
+        run: |
+          echo "::add-mask::$RPC_URL"
+          echo "RPC_URL=$RPC_URL" >> "$GITHUB_ENV"
+        env:
+          RPC_URL: ${{ inputs.chain == 'hoodi' && secrets.RPC_URL_HOODI || secrets.RPC_URL_MAINNET }}
+
+      - name: Setup Discord Webhook URL
+        run: |
+          echo "::add-mask::$DISCORD_WEBHOOK"
+          echo "DISCORD_WEBHOOK=$DISCORD_WEBHOOK" >> "$GITHUB_ENV"
+        env:
+          DISCORD_WEBHOOK: ${{ inputs.chain == 'hoodi' && secrets.DISCORD_WEBHOOK_HOODI || secrets.DISCORD_WEBHOOK_MAINNET }}
+
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: mainnet
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12.4"
 
@@ -47,7 +64,7 @@ jobs:
       - name: Run checks
         run: poetry run wake run --silent check.py
         env:
-          RPC_URL: ${{ inputs.chain == 'hoodi' && secrets.RPC_URL_HOODI || secrets.RPC_URL_MAINNET }}
+          RPC_URL: ${{ env.RPC_URL }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
 
       - name: Echo embeds to the env variable
@@ -70,5 +87,5 @@ jobs:
         if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify) }}
         uses: lidofinance/action-discord@0.3.2
         env:
-          DISCORD_WEBHOOK: ${{ inputs.chain == 'hoodi' && secrets.DISCORD_WEBHOOK_HOODI || secrets.DISCORD_WEBHOOK_MAINNET }}
+          DISCORD_WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
           DISCORD_EMBEDS: ${{ env.EMBEDS }}
