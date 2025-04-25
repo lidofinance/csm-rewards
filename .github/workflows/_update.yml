@@ -66,12 +66,12 @@ jobs:
           ref: ${{ inputs.chain }}
 
       - name: Commit new artifacts
-        if: ${{ steps.script.outputs.updated == 'True' }}
         run: |
+          mv /tmp/artifacts/* .
+          git diff --exit-code --quiet tree.json && { echo "nothing to commit"; exit 0; }
+          git add "*.json"
           git config --global user.name "madlabman"
           git config --global user.email "10616301+madlabman@users.noreply.github.com"
-          mv /tmp/artifacts/* .
-          git add "*.json"
           git commit -m "chore: update tree and proofs" -m "CID: ${{ steps.script.outputs.cid }}"
           git fetch origin
           git rebase --strategy-option=ours "origin/${{ inputs.chain }}"
