@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: mainnet
+          ref: action
           persist-credentials: false
 
       - name: Set up Python 3.12
