@@ -1,3 +1,8 @@
+> [!WARNING]
+> Since the holesky is sunsetting, the branch is not maintained anymore.
+
+---
+
 If you're a Node Operator in CSM, you get staking rewards as a part of Lido
 protocol fees. The allocation of rewards for CSM operators using a Merkle tree
 is provided by CSM Performance Oracle once in a frame, making a new portion of
