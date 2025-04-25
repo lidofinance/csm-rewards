@@ -7,13 +7,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  # testnet:
-  #   uses: ./.github/workflows/_check.yml
-  #   with:
-  #     notify: true
-  #     chain: hoodi
-  #     distributor: "0xaCd9820b0A2229a82dc1A0770307ce5522FF3582"
-  #   secrets: inherit
+  testnet:
+    uses: ./.github/workflows/_check.yml
+    with:
+      notify: true
+      chain: hoodi
+      distributor: "0xaCd9820b0A2229a82dc1A0770307ce5522FF3582"
+    secrets: inherit
 
   mainnet:
     uses: ./.github/workflows/_check.yml
