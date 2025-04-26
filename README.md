@@ -30,7 +30,7 @@ Claim rewards using Etherscan
 - Connect your wallet to Etherscan
 - Select `claim*` method you want to use, e.g. `claimRewardsStETH`.
 - Enter your Node Operator ID, e.g. `42`.
-- Enter the amout you wish to claim in the token of choice or use any large
+- Enter the amount you wish to claim in the token of choice or use any large
   value, e.g
   `115792089237316195423570985008687907853269984665640564039457584007913129639935`
   if you don't know the exact number.
