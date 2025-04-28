@@ -10,7 +10,7 @@ import requests
 class PublicIPFS:
     """Public IPFS gateway"""
 
-    GATEWAY = "https://ipfs.io"
+    GATEWAY = "https://gateway.pinata.cloud"
 
     def __init__(self, *, timeout: int = 120) -> None:
         super().__init__()
