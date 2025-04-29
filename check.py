@@ -38,7 +38,7 @@ def main():
         sys.exit(EXIT_SUCCESS)
 
     logs: list[Log] = chain.chain_interface.get_logs(
-        from_block=last_net_bn - EVENTS_RANGE_BLOCKS,
+        from_block=max(last_net_bn - EVENTS_RANGE_BLOCKS, 0),
         to_block=last_net_bn,
         topics=[f"0x{ICSFeeDistributor.DistributionDataUpdated.selector.hex()}"],
         address=getenv("DISTRIBUTOR_ADDRESS"),
