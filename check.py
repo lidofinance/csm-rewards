@@ -5,8 +5,8 @@ from typing import TypedDict
 
 from wake.deployment import Abi, Address, TransactionAbc, chain, print
 
-from env import EnvNotSet, getenv
-from ipfs import GW3, PublicIPFS
+from env import getenv
+from ipfs import PublicIPFS
 from pytypes.contracts.ICSFeeDistributor import ICSFeeDistributor
 from tree import CSMRewardTree
 
@@ -87,13 +87,7 @@ def main():
         eprint("Unable to get reference slot from the report tx")
         sys.exit(EXIT_FAILURE)
 
-    try:
-        ipfs = GW3(
-            getenv("GW3_ACCESS_KEY"),
-            getenv("GW3_SECRET_KEY"),
-        )
-    except EnvNotSet:
-        ipfs = PublicIPFS()
+    ipfs = PublicIPFS()
 
     curr_tree = CSMRewardTree.load(json.loads(ipfs.fetch(curr_cid)))
     if curr_tree.root != curr_root:

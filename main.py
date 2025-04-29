@@ -4,7 +4,7 @@ import sys
 from wake.deployment import Address, chain, print
 
 from env import EnvNotSet, getenv
-from ipfs import GW3, PublicIPFS
+from ipfs import PublicIPFS
 from pytypes.contracts.ICSFeeDistributor import ICSFeeDistributor
 from tree import CSMRewardTree
 
@@ -26,13 +26,7 @@ def main():
         print("No tree CID stored so far")
         sys.exit(EXIT_SUCCESS)
 
-    try:
-        ipfs = GW3(
-            getenv("GW3_ACCESS_KEY"),
-            getenv("GW3_SECRET_KEY"),
-        )
-    except EnvNotSet:
-        ipfs = PublicIPFS()
+    ipfs = PublicIPFS()
 
     tree = CSMRewardTree.load(json.loads(ipfs.fetch(cid)))
     if tree.root != root:
