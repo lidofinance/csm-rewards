@@ -16,6 +16,7 @@ EXIT_FAILURE = 1
 SECONDS_PER_SLOT = 12
 SECONDS_PER_DAY = 3600 * 24
 EVENTS_RANGE_BLOCKS = SECONDS_PER_DAY * 45 // SECONDS_PER_SLOT
+BATCH_SIZE = 10_000
 
 
 class Log(TypedDict):
@@ -37,12 +38,18 @@ def main():
         print("No distribution happened so far")
         sys.exit(EXIT_SUCCESS)
 
-    logs: list[Log] = chain.chain_interface.get_logs(
-        from_block=max(last_net_bn - EVENTS_RANGE_BLOCKS, 0),
-        to_block=last_net_bn,
-        topics=[f"0x{ICSFeeDistributor.DistributionDataUpdated.selector.hex()}"],
-        address=getenv("DISTRIBUTOR_ADDRESS"),
-    )
+    logs: list[Log] = []
+    from_block = max(last_net_bn - EVENTS_RANGE_BLOCKS, 0)
+    while from_block <= last_net_bn:
+        logs.extend(
+            chain.chain_interface.get_logs(
+                from_block=from_block,
+                to_block=min(from_block + BATCH_SIZE, last_net_bn),
+                topics=[f"0x{ICSFeeDistributor.DistributionDataUpdated.selector.hex()}"],
+                address=getenv("DISTRIBUTOR_ADDRESS"),
+            )
+        )
+        from_block += BATCH_SIZE + 1
 
     distributed = 0
     ref_slot: int | None = None
