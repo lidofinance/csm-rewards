@@ -1,9 +1,10 @@
 import json
+import math
 import sys
 from collections import defaultdict
 from typing import TypedDict
 
-from wake.deployment import Abi, Address, TransactionAbc, chain, print
+from wake.deployment import Abi, Address, TransactionAbc, TransactionRevertedError, bytes32, chain, print
 
 from env import getenv
 from ipfs import PublicIPFS
@@ -38,10 +39,10 @@ def main():
         print("No distribution happened so far")
         sys.exit(EXIT_SUCCESS)
 
-    logs: list[Log] = []
+    events: list[Log] = []
     from_block = max(last_net_bn - EVENTS_RANGE_BLOCKS, 0)
     while from_block <= last_net_bn:
-        logs.extend(
+        events.extend(
             chain.chain_interface.get_logs(
                 from_block=from_block,
                 to_block=min(from_block + BATCH_SIZE, last_net_bn),
@@ -55,21 +56,26 @@ def main():
     ref_slot: int | None = None
     tx: TransactionAbc | None = None
 
-    for evt in reversed(logs):
+    for evt in reversed(events):
         tx = chain.txs[evt["transactionHash"]]
+
+        # Try to decode CSM v1 transaction input.
         # @see https://github.com/lidofinance/community-staking-module/blob/cd11a7964e6054a3f8b9a4ea82ce37044d408b04/src/CSFeeOracle.sol#L116
         try:
             decoded = Abi.decode(
                 (
                     f"({
-                    ",".join([
-                        "uint256",  # consensusVersion
-                        "uint256",  # refSlot
-                        "bytes32",  # treeRoot
-                        "string",  # treeCid
-                        "string",  # logCid
-                        "uint256",  # distributed
-                    ])})",
+                        ','.join(
+                            [
+                                'uint256',  # consensusVersion
+                                'uint256',  # refSlot
+                                'bytes32',  # treeRoot
+                                'string',  # treeCid
+                                'string',  # logCid
+                                'uint256',  # distributed
+                            ]
+                        )
+                    })",
                     "uint256",  # contractVersion
                 ),
                 tx.data[4:],
@@ -81,8 +87,43 @@ def main():
             ((_, ref_slot, root, _, _, distributed), _) = decoded
             if root == curr_root:
                 print(
-                    f"Latest distribution happened at tx {tx.tx_hash},"
-                    f"{distributed=}, root=0x{root.hex()}, {ref_slot=}"
+                    f"Latest distribution happened at tx {tx.tx_hash},{distributed=}, root=0x{root.hex()}, {ref_slot=}"
+                )
+                break
+
+        # Try to decode CSM v2 transaction input.
+        # NOTE: The block will be replaced with distribution data history getter eventually.
+        # @see https://github.com/lidofinance/community-staking-module/blob/40ecb6d9c1934ec29ef88f7b42164dd38a73d717/src/CSFeeOracle.sol#L103
+        try:
+            decoded = Abi.decode(
+                (
+                    f"({
+                        ','.join(
+                            [
+                                'uint256',  # consensusVersion
+                                'uint256',  # refSlot
+                                'bytes32',  # treeRoot
+                                'string',  # treeCid
+                                'string',  # logCid
+                                'uint256',  # distributed
+                                'uint256',  # rebate
+                                'bytes32',  # strikesTreeRoot
+                                'string',  # strikesTreeCid
+                            ]
+                        )
+                    })",
+                    "uint256",  # contractVersion
+                ),
+                tx.data[4:],
+            )
+        except Exception:
+            # NOTE: We changed the method's signature at some point.
+            pass
+        else:
+            ((_, ref_slot, root, _, _, distributed), _) = decoded
+            if root == curr_root:
+                print(
+                    f"Latest distribution happened at tx {tx.tx_hash},{distributed=}, root=0x{root.hex()}, {ref_slot=}"
                 )
                 break
 
@@ -134,19 +175,22 @@ def main():
         sys.exit(EXIT_FAILURE)
 
     log_cid = distributor.logCid(block=last_net_bn)
-    log = json.loads(ipfs.fetch(log_cid))
-    print(f"[OK] Latest frame log restored from CID={log_cid}")
+    logs = json.loads(ipfs.fetch(log_cid))
+    print(f"[OK] Latest frame log(s) restored from CID={log_cid}")
 
-    if (log_ref_slot := log["blockstamp"]["ref_slot"]) != ref_slot:
+    mr_frame_log = logs if type(logs) is dict else logs[-1]
+    assert type(mr_frame_log) is dict
+
+    if (log_ref_slot := mr_frame_log["blockstamp"]["ref_slot"]) != ref_slot:
         eprint(f"Invalid ref_slot in log, got={log_ref_slot} expected={ref_slot}")
         sys.exit(EXIT_FAILURE)
 
-    report_block = chain.blocks[log["blockstamp"]["block_number"]]
+    log_blockstamp = mr_frame_log["blockstamp"]
+    report_block = chain.blocks[log_blockstamp["block_number"]]
 
-    if (log_block_hash := log["blockstamp"]["block_hash"]) != report_block.hash:
+    if (log_block_hash := log_blockstamp["block_hash"]) != report_block.hash:
         eprint(
-            f"Invalid block in log, got hash {report_block.hash} by {report_block.number}, "
-            f"expected={log_block_hash}"
+            f"Invalid block in log, got hash {report_block.hash} by {report_block.number}, expected={log_block_hash}"
         )
         sys.exit(EXIT_FAILURE)
 
@@ -156,35 +200,91 @@ def main():
 
     print("[OK] Report blockstamp seems to be valid")
 
-    shares_of_op = defaultdict[int, int](int)
-    for op_id, op in log["operators"].items():
-        for v in op["validators"].values():
-            if v["slashed"]:
-                continue
-            perf = v["perf"]["included"] / v["perf"]["assigned"]
-            if not v["slashed"] and perf > log["threshold"]:
-                shares_of_op[int(op_id)] += v["perf"]["assigned"]
+    rebate_recipient = chain.chain_interface.get_storage_at(
+        str(distributor.address),
+        0x07,
+        report_block.hash,
+    )
+    csm_v2 = rebate_recipient != bytes32(0)
+    print(f"[OK] Detected CSM version is v{2 if csm_v2 else 1}")
 
-    total_shares = sum(shares_of_op.values())
-    for op_id, op_share in shares_of_op.items():
-        expected = log["distributable"] * op_share // total_shares
-        actual = curr_tree.kv[op_id]
-        if prev_tree and op_id in prev_tree.kv:
-            actual -= prev_tree.kv[op_id]
-        diff = actual - expected
-        if diff != 0:
-            eprint(
-                f"Shares of NO with id {op_id} by frame log are not consistent with the value in the tree"
-                + f"\n\t{actual}[tree] != {expected}[log], {diff=}"
-            )
-            is_failed = True
+    if csm_v2:
+        assert type(logs) is list
+        total_rewards_per_op = defaultdict[int, int](int)
+
+        for log in logs:
+            shares_of_op = defaultdict[int, int](int)
+            total_shares = 0
+
+            for op_id, op in log["operators"].items():
+                for v in op["validators"].values():
+                    if v["slashed"]:
+                        continue
+                    if v["performance"] > v["threshold"]:
+                        op_share = math.ceil(v["attestation_duty"]["assigned"] * v["rewards_share"])
+                        total_shares += v["attestation_duty"]["assigned"]
+                        shares_of_op[int(op_id)] += op_share
+
+            total_rewards_in_frame = 0
+            for op_id, op in log["operators"].items():
+                op_reward = log["distributable"] * shares_of_op[int(op_id)] // total_shares
+                total_rewards_per_op[int(op_id)] += op_reward
+                total_rewards_in_frame += op_reward
+                if op["distributed_rewards"] != op_reward:
+                    eprint(
+                        f"Rewards of NO with id {op_id} are not correct: got {op['distributed_rewards']}, expected {op_reward}"
+                    )
+                    is_failed = True
+
+            rebate = log["distributable"] - total_rewards_in_frame if total_rewards_in_frame else 0
+            if log["rebate_to_protocol"] != rebate:
+                eprint(f"Unexpected rebate amount, got {log['rebate_to_protocol']}, expected {rebate}")
+                is_failed = True
+
+        for op_id, rewards_in_logs in total_rewards_per_op.items():
+            if not rewards_in_logs:
+                continue
+            rewards_in_tree = curr_tree.kv[op_id]
+            if prev_tree and op_id in prev_tree.kv:
+                rewards_in_tree -= prev_tree.kv[op_id]
+            diff = rewards_in_tree - rewards_in_logs
+            if diff != 0:
+                eprint(
+                    f"Shares of NO with id {op_id} by frame logs are not consistent with the value in the tree"
+                    + f"\n\t{rewards_in_tree=} != {rewards_in_logs=}, {diff=}"
+                )
+                is_failed = True
+    else:
+        assert type(logs) is dict
+        shares_of_op = defaultdict[int, int](int)
+        for op_id, op in logs["operators"].items():
+            for v in op["validators"].values():
+                if v["slashed"]:
+                    continue
+                perf = v["perf"]["included"] / v["perf"]["assigned"]
+                if perf > logs["threshold"]:
+                    shares_of_op[int(op_id)] += v["perf"]["assigned"]
+
+        total_shares = sum(shares_of_op.values())
+        for op_id, op_share in shares_of_op.items():
+            expected = logs["distributable"] * op_share // total_shares
+            actual = curr_tree.kv[op_id]
+            if prev_tree and op_id in prev_tree.kv:
+                actual -= prev_tree.kv[op_id]
+            diff = actual - expected
+            if diff != 0:
+                eprint(
+                    f"Shares of NO with id {op_id} by frame log are not consistent with the value in the tree"
+                    + f"\n\t{actual}[tree] != {expected}[log], {diff=}"
+                )
+                is_failed = True
 
     if is_failed:
         sys.exit(EXIT_FAILURE)
-    print("[OK] Tree distribution is consistent with the frame log")
 
+    print("[OK] Tree distribution is consistent with the frame log(s)")
     print("[OK] All checks passed!")
 
 
 def eprint(msg: str) -> None:
-    print(f"error: {msg}", file=sys.stderr)
+    print(f"[FAIL]: {msg}", file=sys.stderr)
