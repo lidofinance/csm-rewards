@@ -67,7 +67,7 @@ GitHub Actions, and the latest artifacts are committed back to the repository.
 
 To run the script manually, follow the instructions below:
 
-1. Make sure you have installed `python >= 3.12` and `poetry >= 1.8.3`
+1. Make sure you have installed `python >= 3.12` and `poetry >= 2.1.1`
 
 1. Install Python dependencies:
 
