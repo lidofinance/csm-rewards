@@ -4,7 +4,7 @@ import sys
 from collections import defaultdict
 from typing import TypedDict
 
-from wake.deployment import Abi, Address, TransactionAbc, TransactionRevertedError, bytes32, chain, print
+from wake.deployment import Abi, Address, TransactionAbc, bytes32, chain, print
 
 from env import getenv
 from ipfs import PublicIPFS
@@ -32,8 +32,8 @@ def main():
 
     last_net_bn = chain.blocks["latest"].number
 
-    curr_root = distributor.treeRoot(block=last_net_bn)
-    curr_cid = distributor.treeCid(block=last_net_bn)
+    curr_root = distributor.treeRoot(block=last_net_bn, type=1, gas_price=0)
+    curr_cid = distributor.treeCid(block=last_net_bn, type=1, gas_price=0)
 
     if not curr_cid or not curr_root:
         print("No distribution happened so far")
@@ -143,10 +143,11 @@ def main():
         sys.exit(EXIT_FAILURE)
     print(f"[OK] CID={curr_cid} contains a tree with an expected root")
 
-    prev_cid = distributor.treeCid(block=tx.block_number - 1)
+    prev_root = distributor.treeRoot(block=tx.block_number - 1, type=1, gas_price=0)
+    prev_cid = distributor.treeCid(block=tx.block_number - 1, type=1, gas_price=0)
+
     prev_tree = None
     if prev_cid:
-        prev_root = distributor.treeRoot(block=tx.block_number - 1)
         prev_tree = CSMRewardTree.load(json.loads(ipfs.fetch(prev_cid)))
         if prev_tree.root != prev_root:
             eprint(f"Unexpected previous tree root: actual={prev_tree.root}, expected={prev_root}")
@@ -174,7 +175,7 @@ def main():
     if is_failed:
         sys.exit(EXIT_FAILURE)
 
-    log_cid = distributor.logCid(block=last_net_bn)
+    log_cid = distributor.logCid(block=last_net_bn, type=1, gas_price=0)
     logs = json.loads(ipfs.fetch(log_cid))
     print(f"[OK] Latest frame log(s) restored from CID={log_cid}")
 
