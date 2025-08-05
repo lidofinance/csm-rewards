@@ -32,8 +32,8 @@ def main():
 
     last_net_bn = chain.blocks["latest"].number
 
-    curr_root = distributor.treeRoot(block=last_net_bn, type=1, gas_price=0)
-    curr_cid = distributor.treeCid(block=last_net_bn, type=1, gas_price=0)
+    curr_root = distributor.treeRoot(block=last_net_bn)
+    curr_cid = distributor.treeCid(block=last_net_bn)
 
     if not curr_cid or not curr_root:
         print("No distribution happened so far")
@@ -87,7 +87,7 @@ def main():
             ((_, ref_slot, root, _, _, distributed), _) = decoded
             if root == curr_root:
                 print(
-                    f"Latest distribution happened at tx {tx.tx_hash},{distributed=}, root=0x{root.hex()}, {ref_slot=}"
+                    f"Latest distribution happened at tx {tx.tx_hash}, {distributed=}, root=0x{root.hex()}, {ref_slot=}"
                 )
                 break
 
@@ -123,7 +123,7 @@ def main():
             ((_, ref_slot, root, _, _, distributed), _) = decoded
             if root == curr_root:
                 print(
-                    f"Latest distribution happened at tx {tx.tx_hash},{distributed=}, root=0x{root.hex()}, {ref_slot=}"
+                    f"Latest distribution happened at tx {tx.tx_hash}, {distributed=}, root=0x{root.hex()}, {ref_slot=}"
                 )
                 break
 
@@ -143,8 +143,8 @@ def main():
         sys.exit(EXIT_FAILURE)
     print(f"[OK] CID={curr_cid} contains a tree with an expected root")
 
-    prev_root = distributor.treeRoot(block=tx.block_number - 1, type=1, gas_price=0)
-    prev_cid = distributor.treeCid(block=tx.block_number - 1, type=1, gas_price=0)
+    prev_root = distributor.treeRoot(block=tx.block_number - 1)
+    prev_cid = distributor.treeCid(block=tx.block_number - 1)
 
     prev_tree = None
     if prev_cid:
