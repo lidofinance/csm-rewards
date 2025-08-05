@@ -217,8 +217,14 @@ def main():
             shares_of_op = defaultdict[int, int](int)
             total_shares = 0
 
+            val_idx_to_op: dict[int, int] = {}
             for op_id, op in log["operators"].items():
-                for v in op["validators"].values():
+                for i, v in op["validators"].items():
+                    if i in val_idx_to_op:
+                        eprint(f"Found second entry for validator {i}: {op_id} and {val_idx_to_op[i]}")
+                        is_failed = True
+                    val_idx_to_op[i] = op_id
+
                     if v["slashed"]:
                         continue
                     if v["performance"] > v["threshold"]:
@@ -258,8 +264,14 @@ def main():
     else:
         assert type(logs) is dict
         shares_of_op = defaultdict[int, int](int)
+        val_idx_to_op: dict[int, int] = {}
         for op_id, op in logs["operators"].items():
-            for v in op["validators"].values():
+            for i, v in op["validators"].items():
+                if i in val_idx_to_op:
+                    eprint(f"Found second entry for validator {i}: {op_id} and {val_idx_to_op[i]}")
+                    is_failed = True
+                val_idx_to_op[i] = op_id
+
                 if v["slashed"]:
                     continue
                 perf = v["perf"]["included"] / v["perf"]["assigned"]
