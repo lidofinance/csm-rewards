@@ -1,10 +1,13 @@
 import json
 import math
 import sys
+import time
 from collections import defaultdict
-from typing import TypedDict
+from functools import wraps
+from typing import Callable, TypedDict
 
 from wake.deployment import Abi, Address, TransactionAbc, bytes32, chain, print
+from wake.development.chain_interfaces import JsonRpcCommunicator
 
 from env import getenv
 from ipfs import PublicIPFS
@@ -301,3 +304,25 @@ def main():
 
 def eprint(msg: str) -> None:
     print(f"[FAIL]: {msg}", file=sys.stderr)
+
+
+def with_retry(func: Callable) -> Callable:
+    MAX_RETRIES = 3
+    DELAY_S = 1
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                return func(*args, **kwargs)
+            except Exception:
+                if attempt == MAX_RETRIES:
+                    raise
+                time.sleep(DELAY_S)
+
+    return wrapped
+
+
+# chain.chain_interface uses the class under the hood
+# with_retry decorator will retry a few specific requests such as `evm_snapshot` during a chain detection phase
+JsonRpcCommunicator.send_request = with_retry(JsonRpcCommunicator.send_request)
