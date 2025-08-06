@@ -32,8 +32,8 @@ def main():
 
     last_net_bn = chain.blocks["latest"].number
 
-    curr_root = distributor.treeRoot(block=last_net_bn, type=1, gas_price=0)
-    curr_cid = distributor.treeCid(block=last_net_bn, type=1, gas_price=0)
+    curr_root = distributor.treeRoot(block=last_net_bn)
+    curr_cid = distributor.treeCid(block=last_net_bn)
 
     if not curr_cid or not curr_root:
         print("No distribution happened so far")
@@ -87,7 +87,7 @@ def main():
             ((_, ref_slot, root, _, _, distributed), _) = decoded
             if root == curr_root:
                 print(
-                    f"Latest distribution happened at tx {tx.tx_hash},{distributed=}, root=0x{root.hex()}, {ref_slot=}"
+                    f"Latest distribution happened at tx {tx.tx_hash}, {distributed=}, root=0x{root.hex()}, {ref_slot=}"
                 )
                 break
 
@@ -123,7 +123,7 @@ def main():
             ((_, ref_slot, root, _, _, distributed), _) = decoded
             if root == curr_root:
                 print(
-                    f"Latest distribution happened at tx {tx.tx_hash},{distributed=}, root=0x{root.hex()}, {ref_slot=}"
+                    f"Latest distribution happened at tx {tx.tx_hash}, {distributed=}, root=0x{root.hex()}, {ref_slot=}"
                 )
                 break
 
@@ -143,8 +143,8 @@ def main():
         sys.exit(EXIT_FAILURE)
     print(f"[OK] CID={curr_cid} contains a tree with an expected root")
 
-    prev_root = distributor.treeRoot(block=tx.block_number - 1, type=1, gas_price=0)
-    prev_cid = distributor.treeCid(block=tx.block_number - 1, type=1, gas_price=0)
+    prev_root = distributor.treeRoot(block=tx.block_number - 1)
+    prev_cid = distributor.treeCid(block=tx.block_number - 1)
 
     prev_tree = None
     if prev_cid:
@@ -217,8 +217,14 @@ def main():
             shares_of_op = defaultdict[int, int](int)
             total_shares = 0
 
+            val_idx_to_op: dict[int, int] = {}
             for op_id, op in log["operators"].items():
-                for v in op["validators"].values():
+                for i, v in op["validators"].items():
+                    if i in val_idx_to_op:
+                        eprint(f"Found second entry for validator {i}: {op_id} and {val_idx_to_op[i]}")
+                        is_failed = True
+                    val_idx_to_op[i] = op_id
+
                     if v["slashed"]:
                         continue
                     if v["performance"] > v["threshold"]:
@@ -258,8 +264,14 @@ def main():
     else:
         assert type(logs) is dict
         shares_of_op = defaultdict[int, int](int)
+        val_idx_to_op: dict[int, int] = {}
         for op_id, op in logs["operators"].items():
-            for v in op["validators"].values():
+            for i, v in op["validators"].items():
+                if i in val_idx_to_op:
+                    eprint(f"Found second entry for validator {i}: {op_id} and {val_idx_to_op[i]}")
+                    is_failed = True
+                val_idx_to_op[i] = op_id
+
                 if v["slashed"]:
                     continue
                 perf = v["perf"]["included"] / v["perf"]["assigned"]
