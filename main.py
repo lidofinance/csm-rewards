@@ -5,7 +5,7 @@ from wake.deployment import Address, chain, print
 
 from env import EnvNotSet, getenv
 from ipfs import PublicIPFS
-from pytypes.contracts.ICSFeeDistributor import ICSFeeDistributor
+from pytypes.contracts.IFeeDistributor import IFeeDistributor
 from tree import CSMRewardTree
 
 EXIT_SUCCESS = 0
@@ -14,11 +14,11 @@ EXIT_FAILURE = 1
 
 @chain.connect(getenv("RPC_URL"))
 def main():
-    distributor = ICSFeeDistributor(getenv("DISTRIBUTOR_ADDRESS"))
+    distributor = IFeeDistributor(getenv("DISTRIBUTOR_ADDRESS"))
     chain.default_call_account = Address(0)
 
-    root = distributor.treeRoot()
-    cid = distributor.treeCid()
+    root = distributor.treeRoot(type=1, gas_price=0)
+    cid = distributor.treeCid(type=1, gas_price=0)
 
     print(f"root={root.hex()} {cid=}")
 
