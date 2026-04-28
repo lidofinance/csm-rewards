@@ -12,6 +12,14 @@ on:
         description: CSFeeDistributor address
         required: true
         type: string
+      source_repository:
+        description: Repository with the script and Python project to run
+        required: false
+        type: string
+      source_ref:
+        description: Git ref in source_repository to check out
+        required: false
+        type: string
 permissions:
   contents: write
 
@@ -30,7 +38,8 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: action
+          repository: ${{ inputs.source_repository || github.repository }}
+          ref: ${{ inputs.source_ref || 'action' }}
           persist-credentials: false
 
       - name: Set up Python
