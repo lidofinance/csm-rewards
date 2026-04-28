@@ -17,6 +17,14 @@ on:
         required: false
         default: false
         type: boolean
+      source_repository:
+        description: Repository with the script and Python project to run
+        required: false
+        type: string
+      source_ref:
+        description: Git ref in source_repository to check out
+        required: false
+        type: string
 
 jobs:
   script:
@@ -40,8 +48,9 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.source_repository || github.repository }}
+          ref: ${{ inputs.source_ref || 'action' }}
           persist-credentials: false
-          ref: action
 
       - name: Set up Python
         uses: actions/setup-python@v5
