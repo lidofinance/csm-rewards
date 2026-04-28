@@ -1,18 +1,19 @@
-[tool.poetry]
+[project]
 name = "csm-rewards"
 version = "0.1.0"
 description = "CSM rewards"
-authors = []
-license = "MIT"
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.12,<4.0"
+license = "MIT"
+dependencies = [
+    "eth-wake",
+    "python-dotenv>=1.2.2,<2.0.0",
+    "requests>=2.32.4,<3.0.0",
+    "setuptools<81",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-requests = "^2.32.4"
-eth-wake = {git = "https://github.com/Ackee-Blockchain/wake"}
-python-dotenv = "^1.0.1"
+[tool.uv]
+package = false
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv.sources]
+eth-wake = { git = "https://github.com/Ackee-Blockchain/wake", tag = "v4.22.1" }

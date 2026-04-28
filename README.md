@@ -67,18 +67,18 @@ GitHub Actions, and the latest artifacts are committed back to the repository.
 
 To run the script manually, follow the instructions below:
 
-1. Make sure you have installed `python >= 3.12` and `poetry >= 2.1.1`
+1. Make sure you have installed `python >= 3.12` and `uv`
 
 1. Install Python dependencies:
 
     ```shell
-    poetry install
+    uv sync --locked --python 3.12.4
     ```
 
 1. Generate stubs for interaction with contracts:
 
     ```shell
-    poetry run wake up pytypes
+    uv run wake up pytypes
     ```
 
 1. Copy `.env.example` to `.env`:
@@ -90,5 +90,5 @@ To run the script manually, follow the instructions below:
 1. Run the script:
 
     ```shell
-    poetry run wake run main.py
+    uv run wake run main.py
     ```
