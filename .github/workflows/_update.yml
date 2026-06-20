@@ -36,7 +36,7 @@ jobs:
         env:
           RPC_URL: ${{ inputs.chain == 'hoodi' && secrets.RPC_URL_HOODI || secrets.RPC_URL_MAINNET }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: ${{ inputs.source_repository || github.repository }}
           ref: ${{ inputs.source_ref || 'action' }}
@@ -65,7 +65,7 @@ jobs:
           RPC_URL: ${{ env.RPC_URL }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           clean: true
           ref: ${{ inputs.chain }}

@@ -46,7 +46,7 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ inputs.chain == 'hoodi' && secrets.DISCORD_WEBHOOK_HOODI || secrets.DISCORD_WEBHOOK_MAINNET }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: ${{ inputs.source_repository || github.repository }}
           ref: ${{ inputs.source_ref || 'action' }}
