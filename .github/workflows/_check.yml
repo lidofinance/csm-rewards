@@ -46,6 +46,13 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ inputs.chain == 'hoodi' && secrets.DISCORD_WEBHOOK_HOODI || secrets.DISCORD_WEBHOOK_MAINNET }}
 
+      - name: Setup IPFS gateway URL
+        run: |
+          echo "::add-mask::$IPFS_GATEWAY"
+          echo "IPFS_GATEWAY=$IPFS_GATEWAY" >> "$GITHUB_ENV"
+        env:
+          IPFS_GATEWAY: ${{ secrets.IPFS_GATEWAY }}
+
       - uses: actions/checkout@v4
         with:
           repository: ${{ inputs.source_repository || github.repository }}
@@ -70,6 +77,7 @@ jobs:
         run: uv run wake run --silent check.py
         env:
           RPC_URL: ${{ env.RPC_URL }}
+          IPFS_GATEWAY: ${{ env.IPFS_GATEWAY }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
 
       - name: Echo embeds to the env variable

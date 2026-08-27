@@ -36,6 +36,13 @@ jobs:
         env:
           RPC_URL: ${{ inputs.chain == 'hoodi' && secrets.RPC_URL_HOODI || secrets.RPC_URL_MAINNET }}
 
+      - name: Setup IPFS gateway URL
+        run: |
+          echo "::add-mask::$IPFS_GATEWAY"
+          echo "IPFS_GATEWAY=$IPFS_GATEWAY" >> "$GITHUB_ENV"
+        env:
+          IPFS_GATEWAY: ${{ secrets.IPFS_GATEWAY }}
+
       - uses: actions/checkout@v4
         with:
           repository: ${{ inputs.source_repository || github.repository }}
@@ -63,6 +70,7 @@ jobs:
         id: script
         env:
           RPC_URL: ${{ env.RPC_URL }}
+          IPFS_GATEWAY: ${{ env.IPFS_GATEWAY }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
 
       - uses: actions/checkout@v4
