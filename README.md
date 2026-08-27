@@ -23,7 +23,7 @@ using the pre-generated [proofs](./proofs.json).
 
 Claim rewards using Etherscan:
 
-- Open [proofs.json](./proofs.json) and locate your record, e.g., 'CSM Operator 42'
+- Open [proofs.json](./proofs.json) and locate your record, e.g., 'Operator 42'
 - Open CSM contract on Etherscan and go to 'Contract' -> 'Write as Proxy' tab
   ([direct link](https://holesky.etherscan.io/address/0x4562c3e63c2e586cD1651B958C22F88135aCAd4f#writeProxyContract))
 - Connect your wallet to Etherscan

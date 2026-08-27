@@ -40,7 +40,7 @@ def main():
         json.dump(dump, fp, indent=2, default=default)
 
     proofs = {
-        f"CSM Operator {v['value'][0]}": {
+        f"Operator {v['value'][0]}": {
             "cumulativeFeeShares": v["value"][1],
             "proof": list(tree.get_proof(v["treeIndex"])),
         }
