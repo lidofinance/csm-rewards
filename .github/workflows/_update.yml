@@ -61,6 +61,13 @@ jobs:
       - name: Setup uv
         run: python -m pip install uv==0.11.8
 
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+          restore-keys: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+
       - name: Install dependencies
         run: uv sync --locked --python "$PYTHON_VERSION"
 
