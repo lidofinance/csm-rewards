@@ -5,8 +5,12 @@ on:
   workflow_call:
     inputs:
       chain:
-        description: Branch to commit the updated artifacts to
+        description: Chain to run the script on
         required: true
+        type: string
+      branch:
+        description: Branch to commit the updated artifacts to; defaults to chain
+        required: false
         type: string
       distributor:
         description: CSFeeDistributor address
@@ -76,7 +80,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           clean: true
-          ref: ${{ inputs.chain }}
+          ref: ${{ inputs.branch || inputs.chain }}
 
       - name: Commit new artifacts
         run: |
@@ -87,5 +91,5 @@ jobs:
           git config --global user.email "10616301+madlabman@users.noreply.github.com"
           git commit -m "chore: update tree and proofs" -m "CID: ${{ steps.script.outputs.cid }}"
           git fetch origin
-          git rebase --strategy-option=ours "origin/${{ inputs.chain }}"
+          git rebase --strategy-option=ours "origin/${{ inputs.branch || inputs.chain }}"
           git push
