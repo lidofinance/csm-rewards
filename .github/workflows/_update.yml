@@ -68,6 +68,13 @@ jobs:
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
           restore-keys: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
 
+      - name: Cache Solidity compilers
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/wake/compilers
+          key: wake-solc-${{ runner.os }}-${{ hashFiles('wake.toml', 'contracts/**/*.sol') }}
+          restore-keys: wake-solc-${{ runner.os }}-
+
       - name: Install dependencies
         run: uv sync --locked --python "$PYTHON_VERSION"
 
