@@ -2,6 +2,7 @@
 
 [![MAINNET](https://img.shields.io/badge/MAINNET-green?style=for-the-badge)](https://github.com/lidofinance/csm-rewards/tree/mainnet)
 [![HOODI](https://img.shields.io/badge/HOODI-blue?style=for-the-badge)](https://github.com/lidofinance/csm-rewards/tree/hoodi)
+[![HOODI 0x02](https://img.shields.io/badge/HOODI_0x02-blue?style=for-the-badge)](https://github.com/lidofinance/csm-rewards/tree/hoodi-0x02)
 [![HOLESKY](https://img.shields.io/badge/HOLESKY-grey?style=for-the-badge)](https://github.com/lidofinance/csm-rewards/tree/holesky)
 
 </div>

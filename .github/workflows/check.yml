@@ -15,6 +15,14 @@ jobs:
       distributor: "0xaCd9820b0A2229a82dc1A0770307ce5522FF3582"
     secrets: inherit
 
+  testnet-0x02:
+    uses: ./.github/workflows/_check.yml
+    with:
+      notify: true
+      chain: hoodi
+      distributor: "0x7E875b0cb3725Ff58AF903679d1bF807A3089496"
+    secrets: inherit
+
   mainnet:
     uses: ./.github/workflows/_check.yml
     with:
