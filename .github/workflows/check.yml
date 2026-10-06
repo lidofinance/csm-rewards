@@ -30,3 +30,11 @@ jobs:
       chain: mainnet
       distributor: "0xD99CC66fEC647E68294C6477B40fC7E0F6F618D0"
     secrets: inherit
+
+  mainnet-0x02:
+    uses: ./.github/workflows/_check.yml
+    with:
+      notify: true
+      chain: mainnet
+      distributor: "0x122CdeDD0da630B555050976052C262EA25f8335"
+    secrets: inherit
