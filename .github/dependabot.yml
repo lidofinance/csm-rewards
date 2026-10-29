@@ -7,6 +7,10 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    ignore:
+      # eth-wake depends (transitively) on eth-keyfile 0.6.x, which imports pkg_resources, removed in setuptools 81
+      - dependency-name: "setuptools"
+        versions: [">=81"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
