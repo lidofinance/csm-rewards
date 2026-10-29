@@ -47,7 +47,7 @@ jobs:
         env:
           IPFS_GATEWAY: ${{ secrets.IPFS_GATEWAY }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: ${{ inputs.source_repository || github.repository }}
           ref: ${{ inputs.source_ref || 'action' }}
@@ -91,7 +91,7 @@ jobs:
           IPFS_GATEWAY: ${{ env.IPFS_GATEWAY }}
           DISTRIBUTOR_ADDRESS: ${{ inputs.distributor }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           clean: true
           ref: ${{ inputs.branch || inputs.chain }}
