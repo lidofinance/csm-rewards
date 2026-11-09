@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHON_VERSION: "3.12.4"
+      UV_VERSION: "0.11.8"
     steps:
       - name: Setup RPC URL
         run: |
@@ -53,18 +54,15 @@ jobs:
           ref: ${{ inputs.source_ref || 'action' }}
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Setup uv
-        run: python -m pip install uv==0.11.8
+        run: pipx install "uv==$UV_VERSION"
 
-      - name: Cache uv dependencies
+      - name: Cache uv dependencies and Python
         uses: actions/cache@v6
         with:
-          path: ~/.cache/uv
+          path: |
+            ~/.cache/uv
+            ~/.local/share/uv/python
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
           restore-keys: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
 
@@ -76,7 +74,7 @@ jobs:
           restore-keys: wake-solc-${{ runner.os }}-
 
       - name: Install dependencies
-        run: uv sync --locked --python "$PYTHON_VERSION"
+        run: uv sync --locked --managed-python --python "$PYTHON_VERSION"
 
       - name: Generate types
         run: uv run wake up pytypes
