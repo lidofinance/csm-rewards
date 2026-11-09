@@ -74,7 +74,7 @@ To run the script manually, follow the instructions below:
 1. Install Python dependencies:
 
     ```shell
-    uv sync --locked --python 3.12.4
+    uv sync --locked --managed-python --python 3.12.4
     ```
 
 1. Generate stubs for interaction with contracts:
